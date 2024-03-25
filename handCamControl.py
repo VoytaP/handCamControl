@@ -6,8 +6,7 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
 SCALE = 0.01
-PATH = 'C:/Tvorba/blenderPokusy/addonPokus/hand_landmarker.task'
-MAXTIMESTAMP = 500
+PATH = 'C:/Tvorba/handCamControl/hand_landmarker.task'
 
 # Create an HandLandmarker object
 BaseOptions = python.BaseOptions(model_asset_path=PATH)
@@ -39,8 +38,55 @@ def controlHand():
 
     print(timeStamp)
     timeStamp += 1 
-    if timeStamp == MAXTIMESTAMP:
-        return None
     return 0.1
 
-bpy.app.timers.register(controlHand)
+# Create Blender UI
+class StartHandCamOperator(bpy.types.Operator):
+    """Start handCamControl"""
+    bl_idname = "hand.start_hand_cam"
+    bl_label = "startHandCam Operator"
+
+    def execute(self, context):
+        bpy.app.timers.register(controlHand)
+        return {'FINISHED'}
+        
+class StopHandCamOperator(bpy.types.Operator):
+    """Stop handCamControl"""
+    bl_idname = "hand.stop_hand_cam"
+    bl_label = "stopHandCam Operator"
+
+    def execute(self, context):
+        bpy.app.timers.unregister(controlHand)
+        return {'FINISHED'}
+    
+class HandCamPanel(bpy.types.Panel):
+    """Creates a Panel to start/stop handCamControl"""
+    
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "HandCamControl"
+    bl_label = "HandCamControl"
+
+    def draw(self, context):
+        """layout of the panel"""
+        running = bpy.app.timers.is_registered(controlHand)
+        row = self.layout.row()
+        row.operator("hand.start_hand_cam", text="Start")
+        row.enabled = not running
+        row = self.layout.row()
+        row.operator("hand.stop_hand_cam", text="Stop")
+        row.enabled = running
+        
+def register():
+    bpy.utils.register_class(StartHandCamOperator)
+    bpy.utils.register_class(StopHandCamOperator)
+    bpy.utils.register_class(HandCamPanel)
+    
+def unregister():
+    bpy.utils.unregister_class(StartHandCamOperator)
+    bpy.utils.unregister_class(StopHandCamOperator)
+    bpy.utils.unregister_class(HandCamPanel)
+    
+if __name__ == "__main__":
+    register()
+    
